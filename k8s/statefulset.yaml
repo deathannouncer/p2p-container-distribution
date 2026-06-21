@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: p2pcd
+  labels:
+    app: p2pcd
+spec:
+  serviceName: p2pcd
+  replicas: 3
+  podManagementPolicy: Parallel # nodes self-heal around each other, so they
+  # don't need to come up in strict order like a primary/replica DB would.
+  selector:
+    matchLabels:
+      app: p2pcd
+  template:
+    metadata:
+      labels:
+        app: p2pcd
+    spec:
+      containers:
+        - name: node
+          image: p2pcd:latest # replace with your registry/tag
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: STATEFULSET_NAME
+              value: "p2pcd"
+            - name: SERVICE_NAME
+              value: "p2pcd"
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: REPLICAS
+              value: "3"
+            - name: DATA_DIR
+              value: "/var/lib/p2pcd/data"
+            # Optional S3 cold tier -- populate via a real Secret in
+            # production rather than inlining values here.
+            - name: S3_BUCKET
+              valueFrom:
+                configMapKeyRef:
+                  name: p2pcd-config
+                  key: s3_bucket
+                  optional: true
+            - name: AWS_REGION
+              valueFrom:
+                configMapKeyRef:
+                  name: p2pcd-config
+                  key: aws_region
+                  optional: true
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: p2pcd-s3-credentials
+                  key: access-key-id
+                  optional: true
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: p2pcd-s3-credentials
+                  key: secret-access-key
+                  optional: true
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/p2pcd/data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 20Gi

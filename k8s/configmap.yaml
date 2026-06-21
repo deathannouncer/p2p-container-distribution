@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: p2pcd-config
+data:
+  # Leave s3_bucket empty to disable the S3 overflow tier entirely -- nodes
+  # run fine on local-disk storage only.
+  s3_bucket: ""
+  aws_region: "us-east-1"

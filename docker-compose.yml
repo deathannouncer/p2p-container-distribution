@@ -1,0 +1,63 @@
+version: "3.9"
+
+# Brings up a 3-node cluster locally for development/testing. Mirrors the
+# topology used in scripts/test-multi-node.sh, just containerized.
+#
+#   docker compose up --build
+#   curl -X POST --data-binary @some-layer.tar http://localhost:8081/blobs/layer-1
+#   curl http://localhost:8081/blobs/layer-1 -o out.tar
+#
+services:
+  node-1:
+    build: .
+    container_name: p2pcd-node-1
+    command:
+      - "-node-id=node-1"
+      - "-listen=:8080"
+      - "-advertise=node-1:8080"
+      - "-peers=node-2=node-2:8080,node-3=node-3:8080"
+      - "-data-dir=/var/lib/p2pcd/data"
+    ports:
+      - "8081:8080"
+    volumes:
+      - node1-data:/var/lib/p2pcd/data
+    networks: [p2pcd]
+
+  node-2:
+    build: .
+    container_name: p2pcd-node-2
+    command:
+      - "-node-id=node-2"
+      - "-listen=:8080"
+      - "-advertise=node-2:8080"
+      - "-peers=node-1=node-1:8080,node-3=node-3:8080"
+      - "-data-dir=/var/lib/p2pcd/data"
+    ports:
+      - "8082:8080"
+    volumes:
+      - node2-data:/var/lib/p2pcd/data
+    networks: [p2pcd]
+
+  node-3:
+    build: .
+    container_name: p2pcd-node-3
+    command:
+      - "-node-id=node-3"
+      - "-listen=:8080"
+      - "-advertise=node-3:8080"
+      - "-peers=node-1=node-1:8080,node-2=node-2:8080"
+      - "-data-dir=/var/lib/p2pcd/data"
+    ports:
+      - "8083:8080"
+    volumes:
+      - node3-data:/var/lib/p2pcd/data
+    networks: [p2pcd]
+
+networks:
+  p2pcd:
+    driver: bridge
+
+volumes:
+  node1-data:
+  node2-data:
+  node3-data:
