@@ -18,10 +18,10 @@ newly joined node must sync before it can serve traffic, which is
 the mechanism behind the startup latency improvement.
 
 | Cluster size | Naive modulo moves | Consistent ring moves | Reduction |
-|---|---|---|---|
-| 4 nodes | ~75% | ~22% | ~71% |
-| 9 nodes | ~89% | ~11% | ~87% |
-| 16 nodes | ~94% | ~6% | ~94% |
+|----------|------|------|------|
+| 4 nodes  | ~75% | ~22% | ~71% |
+| 9 nodes  | ~89% | ~11% | ~87% |
+| 16 nodes | ~94% | ~6%  | ~94% |
 
 **Availability under node failure:**
 16,029 HTTP requests across 10 concurrent readers over 25 seconds.
